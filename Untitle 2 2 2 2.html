@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>给李子玥的小情书</title>
+  <style>
+    :root {
+      --bg1: #ffdde1;
+      --bg2: #ee9ca7;
+      --card: #ffffffee;
+      --txt: #2b2b2b;
+      --accent: #ff4d6d;
+      --accent-dark: #c81d3c;
+    }
+    html, body { height:100%; margin:0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(1200px 800px at 70% -10%, var(--bg1), transparent 60%),
+                  linear-gradient(135deg, var(--bg2), var(--bg1));
+      color: var(--txt);
+      overflow: hidden;
+    }
+    .hearts { position: fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .heart {
+      position:absolute;
+      width:18px; height:18px;
+      background: var(--accent);
+      transform: rotate(45deg);
+      animation: floatUp 6s linear infinite;
+      opacity: 0.75;
+    }
+    .heart::before, .heart::after {
+      content:""; position:absolute;
+      width:18px; height:18px;
+      background: var(--accent); border-radius:50%;
+    }
+    .heart::before { left:-9px; }
+    .heart::after { top:-9px; }
+
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) rotate(45deg); opacity:0; }
+      100% { transform: translateY(-15vh) rotate(45deg); opacity:0; }
+    }
+    .wrap { position:relative; z-index:2; height:100%; display:flex; justify-content:center; align-items:center; padding:20px; }
+    .card {
+      width: min(720px, 90vw);
+      background: var(--card);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.15);
+      backdrop-filter: blur(6px);
+      text-align: center;
+    }
+    .title { font-size: clamp(26px,5vw,36px); font-weight:800; margin-bottom:16px; }
+    .subtitle { font-size: clamp(14px,3.2vw,16px); color:#555; margin-bottom:14px; }
+    .type { font-size: clamp(18px,4.2vw,22px); line-height:1.7; white-space:pre-wrap; min-height:6em; }
+    .cursor { display:inline-block; width:.9ch; border-right:2px solid var(--accent); animation:blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { border-color: transparent; } }
+    .hint { font-size:12px; color:#666; margin-top:10px; }
+    #confetti { position: fixed; inset:0; pointer-events:none; z-index:1; }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  <div class="hearts" id="hearts"></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="title">给 <span id="name">李子玥</span> 的小情书</div>
+      <div class="subtitle">💌 这是给你的真心话</div>
+      <div class="type" id="typewriter"></div><div class="cursor" id="cursor"></div>
+      <div class="hint">音乐已为你自动播放 🎵</div>
+    </div>
+  </div>
+
+  <!-- 自动播放音乐 -->
+  <audio id="bgm" preload="auto" loop>
+    <source src="https://cdn.jsdelivr.net/gh/13623724102/lo-ve@main/love.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const RECEIVER_NAME = "李子玥";
+    const SENDER_NAME = "荣奥淇";
+    const MESSAGES = [
+      "子玥：",
+      "遇见你，是我最美的意外。",
+      "我喜欢你笑的样子，也想和你看很多很多的日出和日落。",
+      "如果可以，我想把接下来的每一天，都用来对你好。",
+      "你愿意让我一直牵着你走下去吗？"
+    ];
+    document.getElementById("name").textContent = RECEIVER_NAME;
+
+    // ❤️ 飘动动画
+    const heartsContainer = document.getElementById("hearts");
+    setInterval(() => {
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.style.left = Math.random() * 100 + "vw";
+      heartsContainer.appendChild(h);
+      setTimeout(() => h.remove(), 6000);
+    }, 300);
+
+    // ⌨ 打字机效果
+    const el = document.getElementById("typewriter");
+    const cursor = document.getElementById("cursor");
+
+    async function typeMessages(){
+      el.textContent = "";
+      for (let i = 0; i < MESSAGES.length; i++) {
+        const text = MESSAGES[i] + (i < MESSAGES.length - 1 ? "\n\n" : "\n\n—— " + SENDER_NAME);
+        await typeText(text);
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+
+    async function typeText(text) {
+      for (const ch of text) {
+        el.textContent += ch;
+        await new Promise(r => setTimeout(r, ch === "\n" ? 20 : 25 + Math.random() * 35));
+      }
+    }
+
+    setTimeout(typeMessages, 500);
+
+    // 🎵 自动播放音乐
+    const bgm = document.getElementById("bgm");
+    document.addEventListener("DOMContentLoaded", () => {
+      const playMusic = () => {
+        bgm.play().catch(() => {
+          // 如果浏览器拦截，就在第一次触摸时播放
+          document.body.addEventListener("touchstart", () => {
+            bgm.play().catch(()=>{});
+          }, { once: true });
+        });
+      };
+      // iOS 需要先静音才能自启
+      bgm.muted = true;
+      bgm.play().then(() => {
+        bgm.muted = false;
+      }).catch(playMusic);
+    });
+
+    // 🎉 五彩纸屑（可加效果）
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    const DPR = Math.min(2, devicePixelRatio || 1);
+    function resizeCanvas() {
+      canvas.width = innerWidth * DPR;
+      canvas.height = innerHeight * DPR;
+      canvas.style.width = innerWidth + "px";
+      canvas.style.height = innerHeight + "px";
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
